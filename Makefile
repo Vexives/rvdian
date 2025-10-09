@@ -1,15 +1,6 @@
 # All files
 SOURCES = audio_wrapper.c array_utils.c complex_numbers.c frame_processes.c window_funcs.c wrapper_utils.c main.c
 
-# Source Path
-DIRS = src
-BIN = bin
-SEARCHC = $(addsuffix /*.c ,$(DIRS))
-SRCS = $(wildcard $(SEARCHC))
-
-# Object files
-OBJECTS = $(SRCS:%.c=%.o)
-
 # Executable
 EXE = rvdian
 
@@ -17,27 +8,51 @@ EXE = rvdian
 CFLAGS = -Wall -pg
 LDFLAGS = -lm
 
-# Libraries
-LIBS = 
-
 # Compiler
 CC = gcc
 
+# Libraries
+LIBS = 
+
+# Source Path
+DIRS = src
+OBJDIR = bin
+SEARCHC = $(addsuffix /*.c,$(DIRS))
+SRCS = $(wildcard $(SEARCHC))
+
+$(OBJDIR)/%.o: $(DIRS)%.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Object files
+OBJECTS = $(SRCS:$(DIRS)%.c=$(OBJDIR)%.o)
+
 default: all	
 all: $(EXE)
+
+$(OBJECTS): $(OBJDIR)/%.o: $(DIRS)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(EXE): $(OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJECTS) -o $(EXE) $(LIBS)
 
 .PHONY: clean
 cleanall:
-	rm -f $(EXE) $(OBJECTS) *~
+		rm -f $(EXE) $(OBJECTS) *~
 
 cleanexe:
-	rm -f $(EXE) *~
+		rm -f $(EXE) *~
 
 cleanobj:
-	rm -f $(OBJECTS) *~
+		rm -f $(OBJECTS) *~
+
+cleanall_win:
+		-del $(OBJECTS) $(EXE).exe
+
+cleanexe_win:
+		-del $(EXE).exe
+
+cleanobj_win:
+		-del $(OBJECTS)
 
 help:
 	@echo 'SOURCES:'
