@@ -1,19 +1,20 @@
 # All files
-SOURCES = array_utils.c audio_wrapper.c complex_numbers.c frame_processes.c window_funcs.c wrapper_utils.c main.c
+SOURCES = audio_wrapper.c array_utils.c complex_numbers.c frame_processes.c window_funcs.c wrapper_utils.c main.c
 
 # Source Path
 DIRS = src
+BIN = bin
 SEARCHC = $(addsuffix /*.c ,$(DIRS))
 SRCS = $(wildcard $(SEARCHC))
 
 # Object files
-OBJECTS = $(SOURCES:%.c=%.o)
+OBJECTS = $(SRCS:%.c=%.o)
 
 # Executable
 EXE = rvdian
 
 # Flags
-CFLAGS = -Wall -g
+CFLAGS = -Wall -pg
 LDFLAGS = -lm
 
 # Libraries
@@ -22,17 +23,21 @@ LIBS =
 # Compiler
 CC = gcc
 
-#vpath %.c $(DIRS)
-
 default: all	
 all: $(EXE)
 
 $(EXE): $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -o $(EXE) $(LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJECTS) -o $(EXE) $(LIBS)
 
 .PHONY: clean
-clean:
-	@rm -f $(EXE) $(OBJECTS) *~
+cleanall:
+	rm -f $(EXE) $(OBJECTS) *~
+
+cleanexe:
+	rm -f $(EXE) *~
+
+cleanobj:
+	rm -f $(OBJECTS) *~
 
 help:
 	@echo 'SOURCES:'

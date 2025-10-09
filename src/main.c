@@ -4,9 +4,10 @@
 #include <math.h>
 #include "complex_numbers.h"
 #include "audio_wrapper.h"
-#include "wrapper_utils.h"
+#include "window_funcs.h"
 #include "array_utils.h"
 #include "wrapper_utils.h"
+#include "array_utils.h"
 
 int main() {
     printf("Starting file load...\n");

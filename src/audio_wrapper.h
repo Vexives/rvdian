@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "wrapper_utils.h"
 #include "complex_numbers.h"
 
 
@@ -46,6 +45,13 @@ typedef struct wavmeta_t {
 } wavMetaData;
 
 
+// Frame View Struct Def (For large scale frame amounts)
+typedef struct frameview_t {
+    unsigned int loc;         // Frame location
+    complex *frame;           // Data
+} frameView;
+
+
 void* _loadMetaData(const char *filename, wavMetaData *wav);
 bool _convertToComplex(complex *carr, void *farr, long len, unsigned int type);
 void printWrapperInfo(audioWrapper *awr);
@@ -61,6 +67,19 @@ bool initWrapper(audioWrapper *awr,
                  float visualseconds,
                  bool sort,
                  bool display);
+
+complex* getChannel(audioWrapper *awr, bool right);
+void sortChannels(audioWrapper *awr);
+void interlaceChannels(audioWrapper *awr);
+complex** getWindows(audioWrapper *awr);
+void collapseWindows(audioWrapper *awr, complex** wnds);
 void deleteAudioWrapper(audioWrapper *awr);
+
+frameView* newFrameView(audioWrapper *awr);
+bool moveFrameForward(audioWrapper *awr, frameView *fv);
+bool jumpFramesAhead(audioWrapper *awr, frameView *fv, unsigned int num);
+bool moveFrameBackward(audioWrapper *awr, frameView *fv);
+bool jumpFramesBehind(audioWrapper *awr, frameView *fv, unsigned int num);
+void deleteFrameView(frameView* fv);
 
 #endif // AUDIO_WRAPPER_H_
