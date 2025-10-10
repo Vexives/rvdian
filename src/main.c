@@ -9,9 +9,17 @@
 #include "wrapper_utils.h"
 #include "array_utils.h"
 
+/*
+__________________________________________________________________________________
+
+        TEMPORARY TEST MAIN. ENSURING FUNCTIONALITY BEFORE FINAL ASSEMBLY.
+__________________________________________________________________________________
+
+*/
+
 int main() {
     printf("Starting file load...\n");
-    audioWrapper *awrd = newAudioWrapper("../sounds/jose.wav", 60, /*(16384.0f / 44100.0f)*/0.2f, true, true);
+    audioWrapper *awrd = newAudioWrapper("../sounds/testwav.wav", 60, /*(16384.0f / 44100.0f)*/0.2f, true, true);
     printf("\n\nComplete.\n");
 
     //char hL[5] = "aaaab";
