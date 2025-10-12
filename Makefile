@@ -3,7 +3,8 @@ SOURCES = audio_wrapper.c array_utils.c complex_numbers.c frame_processes.c wind
 
 # Executable
 EXE = rvdian
-RM = -del
+RM = rm -f
+RMW = -del
 
 # Flags
 CFLAGS = -Wall -pg
@@ -38,22 +39,22 @@ $(EXE): $(OBJECTS)
 
 .PHONY: clean
 clean:
-		rm -f $(EXE) $(OBJECTS) *~
+		$(RM) $(EXE) $(OBJECTS) gmon.out *~
 
 cleanexe:
-		rm -f $(EXE) *~
+		$(RM) $(EXE) gmon.out *~
 
 cleanobj:
-		rm -f $(OBJECTS) *~
+		$(RM) $(OBJECTS) *~
 
 clean_win:
-		-del $(OBJDIR)\*.o $(EXE).exe
+		$(RMW) $(OBJDIR)\*.o $(EXE).exe gmon.out
 
 cleanexe_win:
-		-del $(EXE).exe
+		$(RMW) $(EXE).exe gmon.out
 
 cleanobj_win:
-		-del $(OBJDIR)\*.o
+		$(RMW) $(OBJDIR)\*.o
 
 help:
 	@echo 'SOURCES:'

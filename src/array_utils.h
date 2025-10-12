@@ -15,5 +15,7 @@ complex minimum(complex* data, unsigned int len);
 complex mean(complex* data, unsigned int len);
 complex* linspace(complex start, complex stop, unsigned int len, bool useEnd);
 complex* arange(unsigned int len);
+complex* reverse(complex* data, unsigned int len);
+complex* fftfreq(unsigned int len, float invFreq);
 
 #endif // AUDIO_UTILS_LIST_H_

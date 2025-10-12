@@ -160,6 +160,14 @@ complex* ifft(complex* data, unsigned int len) {
     return ifftArr;
 }
 
+complex* fftshift(complex* data, unsigned int len) {
+    unsigned int _halfLen = len / 2;
+    complex* _shift = (complex*) malloc(sizeof(complex) * len);
+    memcpy(_shift, &data[_halfLen], sizeof(complex) * _halfLen);
+    memcpy(&_shift[_halfLen], data, sizeof(complex) * _halfLen);
+    return _shift;
+}
+
 complex* realVals(complex* data, unsigned int len) {
     complex* realArr = (complex*) malloc(sizeof(complex) * len);
     for (unsigned int k = 0; k < len; k++) {

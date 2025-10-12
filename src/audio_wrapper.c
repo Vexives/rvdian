@@ -19,6 +19,7 @@
 void* _loadMetaData(const char *filename, wavMetaData *wav) {
     // Load file, dump expected header metadata into buffer
     FILE* file = fopen(filename, "rb");
+    if (file == NULL) { return NULL; }
     if (fread(wav, 1, 44, file) != 44) { fclose(file); return NULL; }
 
     // Metadata optional chunk checking and realignment

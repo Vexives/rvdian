@@ -42,7 +42,8 @@ int main() {
     complex** windows = getWindows(awrd);
     //complex** fftWinds = windowApply(awrd, windows, dft, true);
     //complex* wdftone = /*fftWinds[25];*/ fft(windows[25], awrd->windowSize);
-    complex* wdftone = hann(windows[25], awrd->windowSize);
+    //complex* wdftone = hann(windows[25], awrd->windowSize);
+    complex* wdftone = fftfreq(awrd->windowSize, 1.0f / 44100.0);
     //complex* _BUFF1 = fft(windows[25], awrd->windowSize);
     //complex* wdftone = fft(wdftonePRE, awrd->windowSize);
     //complex* wdftone = ifft(wdftonePRE, awrd->windowSize);

@@ -17,6 +17,7 @@ void _fftProc(complex* data, complex* buff, unsigned int len, bool inverse);
 void _cztProc(complex* data, unsigned int len, bool inverse);
 complex* fft(complex* data, unsigned int len);
 complex* ifft(complex* data, unsigned int len);
+complex* fftshift(complex* data, unsigned int len);
 complex* realVals(complex* data, unsigned int len);
 complex* compVals(complex* data, unsigned int len);
 complex* absVals(complex* data, unsigned int len);

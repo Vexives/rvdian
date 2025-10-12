@@ -10,6 +10,22 @@
 ---------------------------------------------
 */
 
+// In-place Complex Full-Sign Flip
+void ipflipc(complex* dest) {
+    dest->r = -dest->r;
+    dest->i = -dest->i;
+}
+
+// In-place Complex Real-Sign Flip
+void ipflipcr(complex* dest) {
+    dest->r = -dest->r;
+}
+
+// In-place Complex Imaginary-Sign Flip
+void ipflipci(complex* dest) {
+    dest->i = -dest->i;
+}
+
 // In-place Complex Addition
 void ipaddc(complex *dest, complex addit) {
     dest->r += addit.r;
@@ -77,17 +93,32 @@ void ipcompc(complex *dest) {
     dest->r = 0.0f;
 }
 
+//In-place Array Full-Sign Flip
+void ipflipcArr(complex* array, unsigned int len) {
+    for (unsigned int i=0; i<len; i++) ipflipc(&array[i]);
+}
+
+//In-place Array Real-Sign Flip
+void ipflipcrArr(complex* array, unsigned int len) {
+    for (unsigned int i=0; i<len; i++) ipflipcr(&array[i]);
+}
+
+//In-place Array Imaginary-Sign Flip
+void ipflipciArr(complex* array, unsigned int len) {
+    for (unsigned int i=0; i<len; i++) ipflipci(&array[i]);
+}
+
 // In-place Array-to-Array Multiplication
 void ipmultcArr(complex* array1, complex* array2, unsigned int len) {
     for (unsigned int i=0; i<len; i++) ipmultc(&array1[i], array2[i]);
 }
 
-// In-place Array-to-Complex Multiplication
+// In-place Complex Array-to-Complex Multiplication
 void ipmultcArr_s(complex* array, complex val, unsigned int len) {
     for (unsigned int i=0; i<len; i++) ipmultc(&array[i], val);
 }
 
-// In-place Array-to-Float Multiplication
+// In-place Complex Array-to-Float Multiplication
 void ipmultcfArr_s(complex* array, float val, unsigned int len) {
     for (unsigned int i=0; i<len; i++) ipmultcf(&array[i], val);
 }

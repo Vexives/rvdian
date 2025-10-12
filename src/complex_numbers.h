@@ -12,7 +12,9 @@ typedef struct compfloat_t {
     float i;
 } complex;
 
-
+void ipflipc(complex* dest);
+void ipflipcr(complex* dest);
+void ipflipci(complex* dest);
 void ipaddc(complex *dest, complex addit);
 void ipaddcf(complex *dest, float addit);
 void ipsubc(complex *dest, complex subit);
@@ -24,6 +26,9 @@ void ipdivcf(complex *dest, float divit);
 void ipabsc(complex *dest);
 void iprealc(complex *dest);
 void ipcompc(complex *dest);
+void ipflipcArr(complex* array, unsigned int len);
+void ipflipcrArr(complex* array, unsigned int len);
+void ipflipciArr(complex* array, unsigned int len);
 void ipmultcArr(complex* array1, complex* array2, unsigned int len);
 void ipmultcArr_s(complex* array, complex val, unsigned int len);
 void ipmultcfArr_s(complex* array, float val, unsigned int len);

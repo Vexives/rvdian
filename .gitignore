@@ -2,3 +2,4 @@
 *.o
 *.wav
 rvdian.exe
+gmon.out
