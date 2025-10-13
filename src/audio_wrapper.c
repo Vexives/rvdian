@@ -171,8 +171,8 @@ bool initWrapper(audioWrapper *awr,
     awr->lenSeconds = ((float) awr->numSamples) / wavData._samplerate;
     awr->numWindows = (unsigned int) (awr->lenSeconds * awr->frameRate);                   
     awr->winOffset = (unsigned int) (((float) (awr->numSamples - awr->windowSize)) / awr->numWindows);
-    awr->sorted = false;
-    awr->mono = !((bool) (wavData._numchannels - 1));
+    awr->mono = !((bool) (wavData._numchannels - 1));    
+    awr->sorted = awr->mono;
 
     // Convert to complex value array (consisting of all reals)
     long dataLen = awr->numSamples * wavData._numchannels;
@@ -299,8 +299,13 @@ void deleteAudioWrapper(audioWrapper *awr) {
 frameView* newFrameView(audioWrapper *awr) {
     frameView* newView = (frameView*) malloc(sizeof(frameView));
     newView->loc = 0;
-    newView->frame = (complex*) malloc(sizeof(complex) * awr->windowSize);
-    memcpy(newView->frame, awr->rawData, awr->windowSize * sizeof(complex));
+    newView->frameL = (complex*) malloc(sizeof(complex) * awr->windowSize);
+    memcpy(newView->frameL, awr->rawData, awr->windowSize * sizeof(complex));
+    newView->frameR = NULL;
+    if (!awr->mono) {
+        newView->frameR = (complex*) malloc(sizeof(complex) * awr->windowSize);
+        memcpy(newView->frameR, &awr->rawData[awr->numSamples], awr->windowSize * sizeof(complex));
+    }
     return newView;
 }
 
@@ -309,7 +314,9 @@ frameView* newFrameView(audioWrapper *awr) {
 bool moveFrameForward(audioWrapper *awr, frameView *fv) {
     if (fv->loc + awr->winOffset + awr->windowSize >= awr->numSamples) return false;
     fv->loc += awr->winOffset;
-    memcpy(fv->frame, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
+    memcpy(fv->frameL, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
+    if (!awr->mono)
+        memcpy(fv->frameR, &awr->rawData[fv->loc + awr->numSamples], awr->windowSize * sizeof(complex));
     return true;
 }
 
@@ -319,7 +326,9 @@ bool jumpFramesAhead(audioWrapper *awr, frameView *fv, unsigned int num) {
     unsigned int _skip = (awr->winOffset * num);
     if (fv->loc + _skip + awr->windowSize >= awr->numSamples) return false;
     fv->loc += _skip;
-    memcpy(fv->frame, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
+    memcpy(fv->frameL, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
+    if (!awr->mono)
+        memcpy(fv->frameR, &awr->rawData[fv->loc + awr->numSamples], awr->windowSize * sizeof(complex));
     return true;
 }
 
@@ -328,7 +337,9 @@ bool jumpFramesAhead(audioWrapper *awr, frameView *fv, unsigned int num) {
 bool moveFrameBackward(audioWrapper *awr, frameView *fv) {
     if (fv->loc - awr->winOffset < 0) return false;
     fv->loc -= awr->winOffset;
-    memcpy(fv->frame, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
+    memcpy(fv->frameL, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
+    if (!awr->mono)
+        memcpy(fv->frameR, &awr->rawData[fv->loc + awr->numSamples], awr->windowSize * sizeof(complex));
     return true;
 }
 
@@ -338,13 +349,17 @@ bool jumpFramesBehind(audioWrapper *awr, frameView *fv, unsigned int num) {
     unsigned int _skip = (awr->winOffset * num);
     if (fv->loc - _skip < 0) return false;
     fv->loc -= _skip;
-    memcpy(fv->frame, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
+    memcpy(fv->frameL, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
+    if (!awr->mono)
+        memcpy(fv->frameR, &awr->rawData[fv->loc + awr->numSamples], awr->windowSize * sizeof(complex));
     return true;
 }
 
 
 // Closes the given Frame View and frees its memory
 void deleteFrameView(frameView *fv) {
-    free(fv->frame);
+    if (fv->frameR != NULL)
+        free(fv->frameR);
+    free(fv->frameL);
     free(fv);
 }

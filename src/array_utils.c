@@ -68,7 +68,6 @@ complex* fftfreq(unsigned int len, float invFreq) {
     complex* _freqs = (complex*) malloc(sizeof(complex) * len);
     unsigned int _halfLen = len/2;
     if (!(len % 2)) {
-        printf("\n\nHere\n\n");
         for (unsigned int i=0; i<_halfLen; i++) {
             _freqs[i] = (complex) {(float) i, 0.0};
             _freqs[len - (i+1)] = (complex) {-((float) (i+1)), 0.0};

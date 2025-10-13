@@ -48,7 +48,8 @@ typedef struct wavmeta_t {
 // Frame View Struct Def (For large scale frame amounts)
 typedef struct frameview_t {
     unsigned int loc;         // Frame location
-    complex *frame;           // Data
+    complex *frameL;          // Left Data
+    complex *frameR;          // Right Data
 } frameView;
 
 

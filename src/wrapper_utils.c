@@ -109,6 +109,34 @@ void removeDCOffset(audioWrapper* awr) {
     return;
 }
 
-// Monoize
 
-// Stereoize
+// Monoize the raw data stored in the Audio Wrapper
+void monoize(audioWrapper* awr) {
+    if (awr->mono) { return; }
+    // Sort and process (average the data between channels)
+    sortChannels(awr);
+    complex* _channel = (complex*) malloc(sizeof(complex) * awr->numSamples);
+    memcpy(_channel, awr->rawData, sizeof(complex) * awr->numSamples);
+    ipmultcArr(_channel, &awr->rawData[awr->numSamples], awr->numSamples);
+    ipdivcfArr_s(_channel, 2.0f, awr->numSamples);
+
+    // Assign and update
+    awr->mono = true;
+    free(awr->rawData);
+    awr->rawData = _channel;
+}
+
+
+// Stereoize the raw data stored in the Audio Wrapper
+void stereoize(audioWrapper* awr) {
+    if (!awr->mono) { return; }
+    // Create new double-channel audio space
+    complex* _channel = (complex*) malloc(sizeof(complex) * awr->numSamples * 2);
+    memcpy(_channel, awr->rawData, sizeof(complex) * awr->numSamples);
+    memcpy(&_channel[awr->numSamples], awr->rawData, sizeof(complex) * awr->numSamples);
+
+    // Assign and update
+    awr->mono = false;
+    free(awr->rawData);
+    awr->rawData = _channel;
+}

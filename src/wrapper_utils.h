@@ -16,5 +16,7 @@ complex** windowApply(audioWrapper* awr, complex** windows,
                       bool display);
 void normData(audioWrapper* awr);
 void removeDCOffset(audioWrapper* awr);
+void monoize(audioWrapper* awr);
+void stereoize(audioWrapper* awr);
 
 #endif // WRAPPER_UTIL_LIST_H_
