@@ -50,7 +50,7 @@ void* _loadMetaData(const char *filename, wavMetaData *wav) {
 
 
 // Raw WAV data to complex-float value conversion function
-bool _convertToComplex(complex *carr, void *farr, long len, unsigned int type) {
+bool _convertToComplex(complex* restrict carr, void* farr, long len, unsigned int type) {
     switch (type) {
         case 8: { // Single byte precision
             int8_t* f_args = (int8_t*) farr; 
@@ -200,9 +200,8 @@ complex* getChannel(audioWrapper *awr, bool right) {
     }
     else {
         complex* channel = (complex*) malloc(sizeof(complex) * awr->numSamples);
-        for (long i = (long) right; i < awr->numSamples*2; i += 2) {
+        for (long i = (long) right; i < awr->numSamples*2; i += 2)
             channel[i / 2] = awr->rawData[i];
-        }
         return channel;
     }
 }
@@ -274,9 +273,8 @@ complex** getWindows(audioWrapper *awr) {
 // Clears the memory for all windows in a given data window list
 void collapseWindows(audioWrapper *awr, complex** wnds) {
     unsigned int sortStereo = (1 + (unsigned int) (awr->sorted && !awr->mono));
-    for (size_t i = 0; i < awr->numWindows * sortStereo; i++) {
+    for (size_t i = 0; i < awr->numWindows * sortStereo; i++)
         free(wnds[i]);
-    }
     free(wnds);
 }
 

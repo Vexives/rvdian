@@ -8,6 +8,7 @@
 #include "array_utils.h"
 #include "wrapper_utils.h"
 #include "array_utils.h"
+#include "frame_processes.h"
 
 /*
 __________________________________________________________________________________
@@ -40,10 +41,11 @@ int main() {
     //normData(awrd);
 
     complex** windows = getWindows(awrd);
-    //complex** fftWinds = windowApply(awrd, windows, dft, true);
-    //complex* wdftone = /*fftWinds[25];*/ fft(windows[25], awrd->windowSize);
+    complex** fftWinds = windowApply(awrd, windows, fft, true);
+    complex* wdftone = fftWinds[25];
+    //complex* wdftone = fft(windows[25], awrd->windowSize);
     //complex* wdftone = hann(windows[25], awrd->windowSize);
-    complex* wdftone = fftfreq(awrd->windowSize, 1.0f / 44100.0);
+    //complex* wdftone = fftfreq(awrd->windowSize, 1.0f / 44100.0);
     //complex* _BUFF1 = fft(windows[25], awrd->windowSize);
     //complex* wdftone = fft(wdftonePRE, awrd->windowSize);
     //complex* wdftone = ifft(wdftonePRE, awrd->windowSize);

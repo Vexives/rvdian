@@ -35,9 +35,8 @@ complex minimum(complex* data, unsigned int len) {
 
 complex mean(complex* data, unsigned int len) {
     complex _mean = {0.0f, 0.0f};
-    for (unsigned int i=0; i<len; i++) {
+    for (unsigned int i=0; i<len; i++)
         ipaddc(&_mean, data[i]);
-    }
     ipdivc(&_mean, (complex) {len, 0.0f});
     return _mean;
 }

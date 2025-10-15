@@ -80,10 +80,8 @@ void normData(audioWrapper* awr) {
 void removeDCOffset(audioWrapper* awr) {
     if (awr->mono) {
         complex _dc = mean(awr->rawData, awr->numSamples);
-
-        for (unsigned int i=0; i<awr->numSamples; i++) {
+        for (unsigned int i=0; i<awr->numSamples; i++)
             ipsubc(&awr->rawData[i], _dc);
-        }
         return;
     }
 
@@ -93,15 +91,13 @@ void removeDCOffset(audioWrapper* awr) {
 
     // Left channel correcting
     complex _dcL = mean(awr->rawData, _halfPoint);
-    for (unsigned int i=0; i<_halfPoint; i++) {
+    for (unsigned int i=0; i<_halfPoint; i++)
         ipsubc(&awr->rawData[i], _dcL);
-    }
 
     // Right channel correcting
     complex _dcR = mean(&awr->rawData[_halfPoint-1], _halfPoint);
-    for (unsigned int i=_halfPoint-1; i<awr->numSamples; i++) {
+    for (unsigned int i=_halfPoint-1; i<awr->numSamples; i++)
         ipsubc(&awr->rawData[i], _dcR);
-    }
     
     // Realign
     if (!_sortState)
