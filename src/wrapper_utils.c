@@ -46,7 +46,7 @@ void normData(audioWrapper* awr) {
     }
 
     bool _sortState = awr->sorted;
-    unsigned int _halfPoint = awr->numSamples / 2;
+    unsigned int _halfPoint = awr->numSamples;
     sortChannels(awr);
 
     // Left channel normalizing
@@ -60,11 +60,11 @@ void normData(audioWrapper* awr) {
     }
 
     // Right channel normalizing
-    complex _maxR = maximum(&awr->rawData[_halfPoint-1], _halfPoint);
-    complex _minR = minimum(&awr->rawData[_halfPoint-1], _halfPoint);
+    complex _maxR = maximum(&awr->rawData[_halfPoint], _halfPoint);
+    complex _minR = minimum(&awr->rawData[_halfPoint], _halfPoint);
     complex _difR = subc(_maxR, _minR);
 
-    for (unsigned int i=_halfPoint-1; i<awr->numSamples; i++) {
+    for (unsigned int i=_halfPoint; i<_halfPoint*2; i++) {
         ipsubc(&awr->rawData[i], _minR);
         ipdivc(&awr->rawData[i], _difR);
     }
@@ -86,7 +86,7 @@ void removeDCOffset(audioWrapper* awr) {
     }
 
     bool _sortState = awr->sorted;
-    unsigned int _halfPoint = awr->numSamples / 2;
+    unsigned int _halfPoint = awr->numSamples;
     sortChannels(awr);
 
     // Left channel correcting
@@ -95,8 +95,8 @@ void removeDCOffset(audioWrapper* awr) {
         ipsubc(&awr->rawData[i], _dcL);
 
     // Right channel correcting
-    complex _dcR = mean(&awr->rawData[_halfPoint-1], _halfPoint);
-    for (unsigned int i=_halfPoint-1; i<awr->numSamples; i++)
+    complex _dcR = mean(&awr->rawData[_halfPoint], _halfPoint);
+    for (unsigned int i=_halfPoint; i<_halfPoint*2; i++)
         ipsubc(&awr->rawData[i], _dcR);
     
     // Realign

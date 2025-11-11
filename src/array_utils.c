@@ -16,7 +16,7 @@
 */
 
 complex maximum(complex* data, unsigned int len) {
-    complex _max = {-INFINITY, 0.0f};
+    complex _max = {0.0f, 0.0f};
     for (unsigned int i=0; i<len; i++) {
         if (absc(data[i]).r > absc(_max).r)
             _max = data[i];

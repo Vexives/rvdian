@@ -20,7 +20,7 @@ ________________________________________________________________________________
 
 int main() {
     printf("Starting file load...\n");
-    audioWrapper *awrd = newAudioWrapper("../sounds/testwav.wav", 60, /*(16384.0f / 44100.0f)*/0.2f, true, true);
+    audioWrapper *awrd = newAudioWrapper("sounds/testwav.wav", 60, /*(16384.0f / 44100.0f)*/0.2f, true, true);
     printf("\n\nComplete.\n");
 
     //char hL[5] = "aaaab";
@@ -38,7 +38,7 @@ int main() {
 
     //interlaceChannels(awrd);
     //removeDCOffset(awrd);
-    //normData(awrd);
+    normData(awrd);
 
     complex** windows = getWindows(awrd);
     complex** fftWinds = windowApply(awrd, windows, fft, true);
@@ -49,7 +49,7 @@ int main() {
     //complex* _BUFF1 = fft(windows[25], awrd->windowSize);
     //complex* wdftone = fft(wdftonePRE, awrd->windowSize);
     //complex* wdftone = ifft(wdftonePRE, awrd->windowSize);
-    FILE* writeF = fopen("../sounds/windowtest.txt", "w+");
+    FILE* writeF = fopen("sounds/windowtest.txt", "w+");
     for (long i = 0; i < //32768; i++) {
          awrd->windowSize; i++) {
         if (wdftone == NULL) {
