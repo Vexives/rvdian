@@ -41,7 +41,9 @@ def _parse_context(read_in: str) -> dict:
 def _animate_frames(frames: list[np.ndarray], rnge: np.ndarray, context: dict) -> None:
     # Plot and Counter Setup
     _counter = _FrameCounter(context["numframes"])
-    _f, _axList = plt.subplots(_chns := context["channels"], 1, figsize=(16, 9))
+    _f, _axList = plt.subplots(_chns := context["channels"], 1, 
+                               figsize=(context["width"]/context["dpi"], context["height"]/context["dpi"]), 
+                               dpi=context["dpi"])
     _f.subplots_adjust(0, 0, 1, 1)
 
     # Universal channel size expansion

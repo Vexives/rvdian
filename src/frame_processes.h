@@ -23,5 +23,6 @@ complex* compVals(complex* data, unsigned int len);
 complex* absVals(complex* data, unsigned int len);
 complex* toDecibels(complex* data, unsigned int len);
 complex* fromDecibels(complex* data, unsigned int len);
+complex* normalize(complex* data, unsigned int len);
 
 #endif // FRAME_PROCESSES_LIST_H_
