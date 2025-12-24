@@ -6,6 +6,7 @@
 #include <functional>
 #include <filesystem> //C++17
 #include <iostream>
+#include <fstream>
 using namespace std;
 namespace fs = std::filesystem;
 
@@ -21,6 +22,21 @@ extern "C" {
 
 std::unordered_map<std::string, std::function<complex*(complex*, unsigned int)>> _frameFuncs;
 std::unordered_map<std::string, std::function<void(audioWrapper*)>> _wrapperFuncs;
+
+std::string _printComplexArray(complex* arr, unsigned int len, bool floats = true) {
+    std::ostringstream _str;
+    for (unsigned int i=0; i<len; i++) {
+        _str << arr[i].r;
+        if (floats)
+            _str << "+" << arr[i].i << "j";
+        _str << ",";
+    }
+    return _str.str();
+}
+
+bool _typeCheck(std::string const& location, std::string const& type) {
+    return (location.compare(location.length() - type.length(), type.length(), type)==0);
+}
 
 void _setupMaps() {
     // Per-frame & window functions
@@ -57,12 +73,24 @@ void _setupMaps() {
     });
 }
 
+complex* _aggregateFunctions(complex* frame, unsigned int len,
+                             std::list<std::function<complex*(complex*, unsigned int)>> funcs) {
+    complex* agg = frame;
+    for (auto const& f : funcs) {
+        complex* temp = f(agg, len);
+        free(agg);
+        agg = temp;
+    }
+    return agg;
+}
+
 int main(int argc, char** argv) {
     // Mandatory file and type checks
     assert(("Pathname, framerate, height, width, DPI, and frame length must be specified.", argc >= 7));
 
     std::string audioPath = argv[1];
     assert(("Pathname \""s + argv[1] + "\" was not found as a valid file.", fs::exists(audioPath)));
+    assert(("Pathname \""s + argv[1] + "\" is not a valid WAVE file.", _typeCheck(argv[1], ".wav")));
 
     int frameRate = std::atoi(argv[2]);
     assert(("Framerate must be an integer greater than 0.", frameRate > 0));
@@ -80,6 +108,7 @@ int main(int argc, char** argv) {
 
     // Process flags and function caches
     std::list<std::function<complex*(complex*, unsigned int)>> frameCache;
+    bool _display = false;
     for (int i=7; i < argc; i++) {
         // TODO:
         // If frame function, add to cache and continue.
@@ -91,4 +120,23 @@ int main(int argc, char** argv) {
     // Initialize Audio Wrapper and corresponding Frame View.
     // In sequence, iterate Frame View and apply cached functions, write to DUMP file.
     // Call render script and return.
+    std::ofstream dumpFile("bin/_Frame_DUMP.rvdn");
+    audioWrapper* awr = newAudioWrapper(audioPath.c_str(), frameRate, frameLen, true, true);
+    frameView* fv = newFrameView(awr);
+
+    bool _continue = true;
+    while (_continue) {
+        complex* _left = _aggregateFunctions(fv->frameL, awr->windowSize, frameCache);
+        dumpFile << _printComplexArray(_left, frameLen) << "\n";
+        if (!awr->mono) {
+            complex* _right = _aggregateFunctions(fv->frameR, awr->windowSize, frameCache);
+            dumpFile << _printComplexArray(_right, frameLen) << "\n";
+        }
+        dumpFile << std::flush;
+        _continue = moveFrameForward(awr, fv);
+    }
+
+    dumpFile.close();
+    deleteFrameView(fv);
+    deleteAudioWrapper(awr);
 }
