@@ -20,6 +20,8 @@ extern "C" {
     #include "frame_processes.h"
 }
 
+#define nw_assert(func, msg) assert(((void)(msg), (func)))
+
 std::unordered_map<std::string, std::function<complex*(complex*, unsigned int)>> _frameFuncs;
 std::unordered_map<std::string, std::function<void(audioWrapper*)>> _wrapperFuncs;
 
@@ -86,29 +88,29 @@ complex* _aggregateFunctions(complex* frame, unsigned int len,
 
 int main(int argc, char** argv) {
     // Mandatory file and type checks
-    assert(("Pathname, framerate, height, width, DPI, and frame length must be specified.", argc >= 7));
+    nw_assert("Pathname, framerate, height, width, DPI, and frame length must be specified.", argc >= 7);
 
     std::string audioPath = argv[1];
-    assert(("Pathname \""s + argv[1] + "\" was not found as a valid file.", fs::exists(audioPath)));
-    assert(("Pathname \""s + argv[1] + "\" is not a valid WAVE file.", _typeCheck(argv[1], ".wav")));
+    nw_assert("Pathname was not found as a valid file.", fs::exists(audioPath));
+    nw_assert("Pathname is not a valid WAVE file.", _typeCheck(argv[1], ".wav"));
 
     int frameRate = std::atoi(argv[2]);
-    assert(("Framerate must be an integer greater than 0.", frameRate > 0));
+    nw_assert("Framerate must be an integer greater than 0.", frameRate > 0);
 
     int frameHeight = std::atoi(argv[3]), frameWidth = std::atoi(argv[4]);
-    assert(("Height must be an integer greater than 0.", frameHeight > 0));
-    assert(("Width must be an integer greater than 0.", frameWidth > 0));
+    nw_assert("Height must be an integer greater than 0.", frameHeight > 0);
+    nw_assert("Width must be an integer greater than 0.", frameWidth > 0);
 
     int dpi = std::atoi(argv[5]);
-    assert(("DPI must be an integer greater than 0.", dpi > 0));
+    nw_assert("DPI must be an integer greater than 0.", dpi > 0);
 
     float frameLen = std::atof(argv[6]);
-    assert(("Frame length must be a float greater than 0.0.", frameLen > 0.0f));
+    nw_assert("Frame length must be a float greater than 0.0.", frameLen > 0.0f);
     _setupMaps();
 
     // Process flags and function caches
     std::list<std::function<complex*(complex*, unsigned int)>> frameCache;
-    bool _display = false;
+    //bool _display = false;   TODO: This is if the user wishes to display the Wrapper stats.
     for (int i=7; i < argc; i++) {
         // TODO:
         // If frame function, add to cache and continue.
@@ -120,7 +122,7 @@ int main(int argc, char** argv) {
     // Initialize Audio Wrapper and corresponding Frame View.
     // In sequence, iterate Frame View and apply cached functions, write to DUMP file.
     // Call render script and return.
-    std::ofstream dumpFile("bin/_Frame_DUMP.rvdn");
+    std::ofstream dumpFile("_Frame_DUMP.rvdn");
     audioWrapper* awr = newAudioWrapper(audioPath.c_str(), frameRate, frameLen, true, true);
     frameView* fv = newFrameView(awr);
 

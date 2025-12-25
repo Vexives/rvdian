@@ -22,7 +22,7 @@ complex** windowApply(audioWrapper* awr, complex** windows,
                       bool display) {
     complex** newWindows = (complex**) malloc(sizeof(complex*) * awr->numWindows);
 
-    for (int i=0; i<awr->numWindows; i++) {
+    for (unsigned int i=0; i<awr->numWindows; i++) {
         newWindows[i] = func(windows[i], awr->windowSize);
         if (display)
             printf("Window %u render complete.\n", i);

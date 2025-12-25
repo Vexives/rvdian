@@ -1,5 +1,6 @@
 # All files
-SOURCES = audio_wrapper.c array_utils.c complex_numbers.c frame_processes.c window_funcs.c wrapper_utils.c main.c
+CSOURCES = audio_wrapper.c array_utils.c complex_numbers.c frame_processes.c window_funcs.c wrapper_utils.c
+CXXSOURCES = main.cpp
 
 # Executable
 EXE = rvdian
@@ -7,11 +8,13 @@ RM = rm -f
 RMW = -del
 
 # Flags
-CFLAGS = -Wall -pg
+CFLAGS = -Wall -Wextra -pg
+CXXFLAGS = -Wall -Wextra -pg -std=c++17
 LDFLAGS = -lm
 
 # Compiler
 CC = gcc
+CXX = g++
 
 # Libraries
 LIBS = 
@@ -20,22 +23,31 @@ LIBS =
 DIRS = src
 OBJDIR = bin
 SEARCHC = $(addsuffix /*.c,$(DIRS))
+SEARCHCXX = $(addsuffix /*.cpp,$(DIRS))
 SRCS = $(wildcard $(SEARCHC))
+SRCSXX = $(wildcard $(SEARCHCXX))
 
 $(OBJDIR)/%.o: $(DIRS)%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(OBJDIR)/%.o: $(DIRS)%.cpp | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 # Object files
-OBJECTS = $(SRCS:$(DIRS)%.c=$(OBJDIR)%.o)
+COBJECTS = $(SRCS:$(DIRS)%.c=$(OBJDIR)%.o)
+CXXOBJECTS = $(SRCSXX:$(DIRS)%.cpp=$(OBJDIR)%.o)
 
 default: all	
 all: $(EXE)
 
-$(OBJECTS): $(OBJDIR)/%.o: $(DIRS)/%.c
+$(COBJECTS): $(OBJDIR)/%.o: $(DIRS)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(EXE): $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJECTS) -o $(EXE) $(LIBS)
+$(CXXOBJECTS): $(OBJDIR)/%.o: $(DIRS)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(EXE): $(COBJECTS) $(CXXOBJECTS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(COBJECTS) $(CXXOBJECTS) -o $(EXE) $(LIBS)
 
 .PHONY: clean
 clean:
@@ -45,7 +57,7 @@ cleanexe:
 		$(RM) $(EXE) gmon.out *~
 
 cleanobj:
-		$(RM) $(OBJECTS) *~
+		$(RM) $(OBJECTS) gmon.out *~
 
 clean_win:
 		$(RMW) $(OBJDIR)\*.o $(EXE).exe gmon.out
@@ -54,10 +66,10 @@ cleanexe_win:
 		$(RMW) $(EXE).exe gmon.out
 
 cleanobj_win:
-		$(RMW) $(OBJDIR)\*.o
+		$(RMW) $(OBJDIR)\*.o gmon.out
 
 help:
 	@echo 'SOURCES:'
 	@echo $(SRCS)
 	@echo 'OBJECTS:'
-	@echo $(OBJECTS)
+	@echo $(COBJECTS) $(CXXOBJECTS)

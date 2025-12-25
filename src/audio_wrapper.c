@@ -200,7 +200,7 @@ complex* getChannel(audioWrapper *awr, bool right) {
     }
     else {
         complex* channel = (complex*) malloc(sizeof(complex) * awr->numSamples);
-        for (long i = (long) right; i < awr->numSamples*2; i += 2)
+        for (unsigned int i = (unsigned int) right; i < awr->numSamples*2; i += 2)
             channel[i / 2] = awr->rawData[i];
         return channel;
     }
@@ -227,7 +227,7 @@ void interlaceChannels(audioWrapper *awr) {
     if (awr->mono || !awr->sorted) { return; }
     complex* ilChannels = (complex*) malloc(sizeof(complex) * awr->numSamples * 2);
 
-    for (long i = 0; i < awr->numSamples; i++) {
+    for (unsigned int i = 0; i < awr->numSamples; i++) {
         ilChannels[i * 2] = awr->rawData[i];                         // Left Channel Samples
         ilChannels[1 + (i * 2)] = awr->rawData[awr->numSamples + i]; // Right Channel Samples
     }
@@ -310,7 +310,7 @@ frameView* newFrameView(audioWrapper *awr) {
 
 // Moves the Frame View forward by the Audio Wrapper's window offset
 bool moveFrameForward(audioWrapper *awr, frameView *fv) {
-    if (fv->loc + awr->winOffset + awr->windowSize >= awr->numSamples) return false;
+    if ((long) fv->loc + awr->winOffset + awr->windowSize >= awr->numSamples) return false;
     fv->loc += awr->winOffset;
     memcpy(fv->frameL, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
     if (!awr->mono)
@@ -321,8 +321,8 @@ bool moveFrameForward(audioWrapper *awr, frameView *fv) {
 
 // Moves the Frame View ahead by multiple window offsets
 bool jumpFramesAhead(audioWrapper *awr, frameView *fv, unsigned int num) {
-    unsigned int _skip = (awr->winOffset * num);
-    if (fv->loc + _skip + awr->windowSize >= awr->numSamples) return false;
+    long _skip = (awr->winOffset * num);
+    if ((long) fv->loc + _skip + awr->windowSize >= awr->numSamples) return false;
     fv->loc += _skip;
     memcpy(fv->frameL, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
     if (!awr->mono)
@@ -333,7 +333,7 @@ bool jumpFramesAhead(audioWrapper *awr, frameView *fv, unsigned int num) {
 
 // Moves the Frame View backward by the Audio Wrapper's window offset
 bool moveFrameBackward(audioWrapper *awr, frameView *fv) {
-    if (fv->loc - awr->winOffset < 0) return false;
+    if ((long) fv->loc - (long) awr->winOffset < 0) return false;
     fv->loc -= awr->winOffset;
     memcpy(fv->frameL, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
     if (!awr->mono)
@@ -344,8 +344,8 @@ bool moveFrameBackward(audioWrapper *awr, frameView *fv) {
 
 // Moves the Frame View behind by multiple window offsets
 bool jumpFramesBehind(audioWrapper *awr, frameView *fv, unsigned int num) {
-    unsigned int _skip = (awr->winOffset * num);
-    if (fv->loc - _skip < 0) return false;
+    long _skip = (awr->winOffset * num);
+    if ((long) fv->loc - _skip < 0) return false;
     fv->loc -= _skip;
     memcpy(fv->frameL, &awr->rawData[fv->loc], awr->windowSize * sizeof(complex));
     if (!awr->mono)
