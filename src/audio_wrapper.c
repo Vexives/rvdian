@@ -145,7 +145,7 @@ audioWrapper* newAudioWrapper(const char* filename,
                               bool sort,
                               bool display) {
     audioWrapper *n = malloc(sizeof(audioWrapper));
-    if (!initWrapper(n, filename, framerate, visualseconds, sort, display)) { return NULL; }
+    if (!initWrapper(n, filename, framerate, visualseconds, sort, display)) { free(n); return NULL; }
     return n;
 }
 

@@ -20,10 +20,11 @@ extern "C" {
     #include "frame_processes.h"
 }
 
-#define nw_assert(func, msg) assert(((void)(msg), (func)))
+#define nw_assert(msg, func) assert(((void)(msg), (func)))
 
 std::unordered_map<std::string, std::function<complex*(complex*, unsigned int)>> _frameFuncs;
 std::unordered_map<std::string, std::function<void(audioWrapper*)>> _wrapperFuncs;
+
 
 std::string _printComplexArray(complex* arr, unsigned int len, bool floats = true) {
     std::ostringstream _str;
@@ -31,14 +32,17 @@ std::string _printComplexArray(complex* arr, unsigned int len, bool floats = tru
         _str << arr[i].r;
         if (floats)
             _str << "+" << arr[i].i << "j";
-        _str << ",";
+        if (i < len-1)
+            _str << ",";
     }
     return _str.str();
 }
 
+
 bool _typeCheck(std::string const& location, std::string const& type) {
     return (location.compare(location.length() - type.length(), type.length(), type)==0);
 }
+
 
 void _setupMaps() {
     // Per-frame & window functions
@@ -75,6 +79,40 @@ void _setupMaps() {
     });
 }
 
+
+void _displayHelp() {
+    _setupMaps();
+    std::cout << "RVDIAN Syntax:\n./rvdian <Audiopath> <Framerate> <Height> <Width> <DPI> <Frame length> "
+                 "[--effects] [+preprocesses]\nPer-frame Effect Flags:" << std::endl;
+    std::ostringstream _effects;
+    // Per-frames (Sorted by alphabetical order)
+    std::vector<std::string> _oFrames;
+    _oFrames.reserve(_frameFuncs.size());
+    for (const auto& key : _frameFuncs)
+        _oFrames.push_back(key.first);
+    std::sort(_oFrames.begin(), _oFrames.end());
+
+    for (const auto& kv : _oFrames)
+        _effects << "--" << kv << ", ";
+    std::string _out = _effects.str();
+    std::cout << _out.substr(0, _out.size()-2) << "\nPre-Process Flags:" << std::endl;
+    _effects.str("");
+
+    // Pre-processes (Sorted by alphabetical order)
+    std::vector<std::string> _oWraps;
+    _oWraps.reserve(_wrapperFuncs.size());
+    for (const auto& key : _wrapperFuncs)
+        _oWraps.push_back(key.first);
+    std::sort(_oWraps.begin(), _oWraps.end());
+
+    for (const auto& kv : _oWraps)
+        _effects << "+" << kv << ", ";
+    _out = _effects.str();
+    std::cout << _out.substr(0, _out.size()-2) << std::endl;
+    _effects.clear();
+}
+
+
 complex* _aggregateFunctions(complex* frame, unsigned int len,
                              std::list<std::function<complex*(complex*, unsigned int)>> funcs) {
     complex* agg = frame;
@@ -86,7 +124,14 @@ complex* _aggregateFunctions(complex* frame, unsigned int len,
     return agg;
 }
 
+
 int main(int argc, char** argv) {
+    // Help and info
+    if (!strcmp(argv[1], "-help")) {
+        _displayHelp();
+        return 0;
+    }
+
     // Mandatory file and type checks
     nw_assert("Pathname, framerate, height, width, DPI, and frame length must be specified.", argc >= 7);
 
@@ -118,12 +163,9 @@ int main(int argc, char** argv) {
         // If function is not found in either map directories, throw an exception.
     }
 
-    // TODO:
-    // Initialize Audio Wrapper and corresponding Frame View.
-    // In sequence, iterate Frame View and apply cached functions, write to DUMP file.
-    // Call render script and return.
     std::ofstream dumpFile("_Frame_DUMP.rvdn");
     audioWrapper* awr = newAudioWrapper(audioPath.c_str(), frameRate, frameLen, true, true);
+    nw_assert("Frame size must be less than or equal to the length of the full audio.", awr->windowSize <= awr->numSamples);
     frameView* fv = newFrameView(awr);
 
     bool _continue = true;
@@ -141,4 +183,7 @@ int main(int argc, char** argv) {
     dumpFile.close();
     deleteFrameView(fv);
     deleteAudioWrapper(awr);
+
+    // TODO:
+    // Run the renderer script here (any method works, as long as it's portable)
 }
