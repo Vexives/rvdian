@@ -20,7 +20,7 @@ extern "C" {
     #include "frame_processes.h"
 }
 
-#define nw_assert(msg, func) assert(((void)(msg), (func)))
+#define nw_assert(msg, func) if(!(func)) { std::cerr << "STOPPED: " << msg << std::endl; return 1; }
 
 std::unordered_map<std::string, std::function<complex*(complex*, unsigned int)>> _frameFuncs;
 std::unordered_map<std::string, std::function<void(audioWrapper*)>> _wrapperFuncs;
@@ -48,34 +48,34 @@ void _setupMaps() {
     // Per-frame & window functions
     _frameFuncs.insert({
         // Standard functions
-        {"dft", dft},
-        {"idft", idft},
-        {"fft", fft},
-        {"ifft", ifft},
-        {"fftshift", fftshift},
-        {"reals", realVals},
-        {"imags", compVals},
-        {"abs", absVals},
-        {"todecibels", toDecibels},
-        {"fromdecibels", fromDecibels},
+        {"--dft", dft},
+        {"--idft", idft},
+        {"--fft", fft},
+        {"--ifft", ifft},
+        {"--fftshift", fftshift},
+        {"--reals", realVals},
+        {"--imags", compVals},
+        {"--abs", absVals},
+        {"--todecibels", toDecibels},
+        {"--fromdecibels", fromDecibels},
+        {"--norm", normalize},
         // Window functions
-        {"norm", normalize},
-        {"hamming", hamming},
-        {"hann", hann},
-        {"poisson", poisson},
-        {"barlett", barlett},
-        {"lanczos", lanczos},
-        {"tukey", tukey},
-        {"cosine", cosfilter},
-        {"flattop", flattop}
+        {"--hamming", hamming},
+        {"--hann", hann},
+        {"--poisson", poisson},
+        {"--barlett", barlett},
+        {"--lanczos", lanczos},
+        {"--tukey", tukey},
+        {"--cosine", cosfilter},
+        {"--flattop", flattop}
     });
 
     // Wrapper functions
     _wrapperFuncs.insert({
-        {"normdata", normData},
-        {"removedc", removeDCOffset},
-        {"monoize", monoize},
-        {"stereoize", stereoize}
+        {"+normdata", normData},
+        {"+removedc", removeDCOffset},
+        {"+monoize", monoize},
+        {"+stereoize", stereoize}
     });
 }
 
@@ -93,7 +93,7 @@ void _displayHelp() {
     std::sort(_oFrames.begin(), _oFrames.end());
 
     for (const auto& kv : _oFrames)
-        _effects << "--" << kv << ", ";
+        _effects << kv << ", ";
     std::string _out = _effects.str();
     std::cout << _out.substr(0, _out.size()-2) << "\nPre-Process Flags:" << std::endl;
     _effects.str("");
@@ -106,7 +106,7 @@ void _displayHelp() {
     std::sort(_oWraps.begin(), _oWraps.end());
 
     for (const auto& kv : _oWraps)
-        _effects << "+" << kv << ", ";
+        _effects << kv << ", ";
     _out = _effects.str();
     std::cout << _out.substr(0, _out.size()-2) << std::endl;
     _effects.clear();
@@ -135,39 +135,45 @@ int main(int argc, char** argv) {
     // Mandatory file and type checks
     nw_assert("Pathname, framerate, height, width, DPI, and frame length must be specified.", argc >= 7);
 
-    std::string audioPath = argv[1];
+    std::vector<std::string> userArgs(argv, argv+argc);
+    std::string audioPath = userArgs[1];
     nw_assert("Pathname was not found as a valid file.", fs::exists(audioPath));
     nw_assert("Pathname is not a valid WAVE file.", _typeCheck(argv[1], ".wav"));
 
-    int frameRate = std::atoi(argv[2]);
+    int frameRate = atoi(userArgs[2].c_str());
     nw_assert("Framerate must be an integer greater than 0.", frameRate > 0);
 
-    int frameHeight = std::atoi(argv[3]), frameWidth = std::atoi(argv[4]);
+    int frameHeight = atoi(userArgs[3].c_str()), frameWidth = atoi(userArgs[4].c_str());
     nw_assert("Height must be an integer greater than 0.", frameHeight > 0);
     nw_assert("Width must be an integer greater than 0.", frameWidth > 0);
 
-    int dpi = std::atoi(argv[5]);
+    int dpi = atoi(userArgs[5].c_str());
     nw_assert("DPI must be an integer greater than 0.", dpi > 0);
 
-    float frameLen = std::atof(argv[6]);
+    float frameLen = atof(userArgs[6].c_str());
     nw_assert("Frame length must be a float greater than 0.0.", frameLen > 0.0f);
     _setupMaps();
 
     // Process flags and function caches
     std::list<std::function<complex*(complex*, unsigned int)>> frameCache;
-    //bool _display = false;   TODO: This is if the user wishes to display the Wrapper stats.
+    std::list<std::function<void(audioWrapper*)>> wrapCache;
+    bool _display = false;
     for (int i=7; i < argc; i++) {
-        // TODO:
-        // If frame function, add to cache and continue.
-        // Otherwise, test if it is Audio Wrapper function.
-        // If function is not found in either map directories, throw an exception.
+        if (_frameFuncs.count(userArgs[i]) > 0) { frameCache.push_back(_frameFuncs[userArgs[i]]); continue; }
+        if (_wrapperFuncs.count(userArgs[i]) > 0) { wrapCache.push_back(_wrapperFuncs[userArgs[i]]); continue; }
+        if (userArgs[i].compare("+display")) { _display = true; continue; }
+        std::cout << "Process \"" << userArgs[i] << "\" not found. Ignoring." << std::endl;
     }
 
+    // Prepare the information dump file and process the Audio Wrapper
     std::ofstream dumpFile("_Frame_DUMP.rvdn");
-    audioWrapper* awr = newAudioWrapper(audioPath.c_str(), frameRate, frameLen, true, true);
+    audioWrapper* awr = newAudioWrapper(audioPath.c_str(), frameRate, frameLen, true, _display);
     nw_assert("Frame size must be less than or equal to the length of the full audio.", awr->windowSize <= awr->numSamples);
-    frameView* fv = newFrameView(awr);
+    for (const auto& func : wrapCache)
+        func(awr);
 
+    // If all prior checks are passed, open the frame view and process each frame
+    frameView* fv = newFrameView(awr);
     bool _continue = true;
     while (_continue) {
         complex* _left = _aggregateFunctions(fv->frameL, awr->windowSize, frameCache);

@@ -120,7 +120,7 @@ void _printWavInfo(wavMetaData *mta) {
         "Block align: %u\n"
         "Bits per sample: %u\n"
         "DATA - %.4s\n"
-        "Data size: %u",
+        "Data size: %u\n",
         mta->_chunkid,
         mta->_filesize,
         mta->_format,
