@@ -15,11 +15,13 @@ class _FrameCounter():
         print(f"| Rendering: [{__bar}] - {round(__pct * 100, 3)}% - {self.cur} / {self.m_f} |", end="\r")
 
 
+# TODO: Make the animate frames function read from the file instead of creating a large array.
+#       This will be to save memory and prevent a large overload.
 def _parse_frames(frames: list[str] | str, channels: int = 1) -> list[np.ndarray] | np.ndarray:
     if type(frames) is str:
-        return np.array(frames.split(",")).astype("float")
-    return [np.array([c.split(",") for c in frames[i:i+channels]]).astype("float") 
-            for i in range(len(frames), step=channels)]
+        return np.array(frames.strip().split(",")).astype("float")
+    return [np.array([c.strip().split(",") for c in frames[i:i+channels]]).astype("float") 
+            for i in range(0, len(frames), channels)]
 
 
 def _parse_context(read_in: str) -> dict:
@@ -70,12 +72,12 @@ def _animate_frames(frames: list[np.ndarray], rnge: np.ndarray, context: dict) -
 if __name__ == "__main__":
     # Check path
     __path: str = "_Frame_DUMP.rvdn"
-    if not os.path.exists(__path):
+    if not os.path.isfile(__path):
         raise NotADirectoryError("Frames not found. Cannot continue.")
     
     # Get file, dump data into string list, and clear file space
     _all_lines: list[str] = None
-    with open("_Frame_DUMP.rvdn", "r") as file:
+    with open(__path, "r") as file:
         _all_lines: list[str] = file.readlines()
         file.close()
 

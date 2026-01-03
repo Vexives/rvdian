@@ -169,8 +169,8 @@ bool initWrapper(audioWrapper *awr,
     awr->frameRate = framerate;
     awr->windowSize = (unsigned int) (wavData._samplerate * visualseconds);
     awr->lenSeconds = ((float) awr->numSamples) / wavData._samplerate;
-    awr->numWindows = (unsigned int) (awr->lenSeconds * awr->frameRate);                   
-    awr->winOffset = (unsigned int) (((float) (awr->numSamples - awr->windowSize)) / awr->numWindows);
+    awr->winOffset = (unsigned int) (((float) (awr->numSamples - awr->windowSize)) / (awr->lenSeconds * awr->frameRate));
+    awr->numWindows = (unsigned int) ((awr->numSamples - awr->windowSize) / awr->winOffset) + 1;
     awr->mono = !((bool) (wavData._numchannels - 1));    
     awr->sorted = awr->mono;
 
