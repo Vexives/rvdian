@@ -22,6 +22,33 @@ extern "C" {
 
 #define nw_assert(msg, func) if(!(func)) { std::cerr << "STOPPED: " << msg << std::endl; return 1; }
 
+
+class _ProgressBar {
+    private:
+        unsigned int maxFrames;
+        unsigned int currFrame;
+        float pct;
+    public:
+        _ProgressBar(unsigned int numFrames) {
+            maxFrames = numFrames;
+            currFrame = 0;
+            pct = 1.0f / maxFrames;
+        }
+        void increment() {
+            currFrame += 1;
+        }
+        void display(bool clear = false) {
+            if (clear) cout << "\r";
+            unsigned int _complete = (unsigned int) (currFrame * pct * 10);
+            std::cout << "| Processing: [" << std::string(_complete, '=') << std::string(10 - _complete, ' ')
+                      << "] - " << std::round(currFrame * pct * 10000.0f) / 100.0f << "% - " << currFrame << " / " << maxFrames << " |";
+        }
+        void complete() {
+            std::cout << "\r| Processing Complete. |" << std::string(40, ' ') << std::endl;
+        }
+};
+
+
 std::unordered_map<std::string, std::function<complex*(complex*, unsigned int)>> _frameFuncs;
 std::unordered_map<std::string, std::function<void(audioWrapper*)>> _wrapperFuncs;
 
@@ -116,10 +143,10 @@ void _displayHelp() {
 }
 
 
-// TODO: Something here isn't right.
 complex* _aggregateFunctions(complex* frame, unsigned int len,
                              std::list<std::function<complex*(complex*, unsigned int)>> funcs) {
-    complex* agg = frame;
+    complex* agg = (complex*) malloc(sizeof(complex) * len);
+    memcpy(agg, frame, sizeof(complex) * len);
     for (auto const& f : funcs) {
         complex* temp = f(agg, len);
         free(agg);
@@ -161,18 +188,17 @@ int main(int argc, char** argv) {
     // Process flags and function caches
     std::list<std::function<complex*(complex*, unsigned int)>> frameCache;
     std::list<std::function<void(audioWrapper*)>> wrapCache;
-    bool _display = false;
-    bool _logscale = false;
-    bool _fourier = false;
+    bool _display = false, _logscale = false, _fourier = false;
     for (int i=7; i < argc; i++) {
-        if (!userArgs[i].compare("--fft") || !userArgs[i].compare("--dft")) _fourier = true;
-        if (!userArgs[i].compare("--ifft") || !userArgs[i].compare("--idft")) _fourier = false;
+        std::string _command = userArgs[i];
+        if (!_command.compare("--fft") || !_command.compare("--dft")) _fourier = true;
+        else if (!_command.compare("--ifft") || !_command.compare("--idft")) _fourier = false;
 
-        if (!userArgs[i].compare("+display")) { _display = true; continue; }
-        if (!userArgs[i].compare("+logscale")) { _logscale = true; continue; }
-        if (_frameFuncs.count(userArgs[i]) > 0) { frameCache.push_back(_frameFuncs[userArgs[i]]); continue; }
-        if (_wrapperFuncs.count(userArgs[i]) > 0) { wrapCache.push_back(_wrapperFuncs[userArgs[i]]); continue; }
-        std::cout << "Process \"" << userArgs[i] << "\" not found. Ignoring." << std::endl;
+        if (!_command.compare("+display")) { _display = true; continue; }
+        if (!_command.compare("+logscale")) { _logscale = true; continue; }
+        if (_frameFuncs.count(_command) > 0) { frameCache.push_back(_frameFuncs[_command]); continue; }
+        if (_wrapperFuncs.count(_command) > 0) { wrapCache.push_back(_wrapperFuncs[_command]); continue; }
+        std::cout << "Process \"" << _command << "\" not found. Ignoring." << std::endl;
     }
 
     // Prepare the information dump file and process the Audio Wrapper
@@ -182,8 +208,7 @@ int main(int argc, char** argv) {
     for (const auto& func : wrapCache) func(awr);
 
     // Header information
-    complex* _freqs = _fourier ? fftfreq(awr->windowSize, 1.0f / awr->sampleRate) : 
-                                 linspace((complex){0.0f, 0.0f}, (complex){(float) awr->windowSize, 0.0f}, awr->windowSize, false);
+    complex* _freqs = _fourier ? fftfreq(awr->windowSize, 1.0f / awr->sampleRate) : arange(awr->windowSize);
     dumpFile << audioPath << "," << frameHeight << "," << frameWidth << "," << dpi << ",";
     dumpFile << awr->mono << "," << awr->numWindows << "," << frameRate << "," << (_logscale ? "semilogx":"linear") << std::endl;
     dumpFile << _printComplexArray(_freqs, awr->windowSize) << std::endl;
@@ -191,6 +216,9 @@ int main(int argc, char** argv) {
 
     // If all prior checks are passed, open the frame view and process each frame
     frameView* fv = newFrameView(awr);
+    _ProgressBar _pg = _ProgressBar(awr->numWindows);
+    _pg.display();
+
     bool _continue = true;
     while (_continue) {
         complex* _left = _aggregateFunctions(fv->frameL, awr->windowSize, frameCache);
@@ -200,8 +228,10 @@ int main(int argc, char** argv) {
             dumpFile << _printComplexArray(_right, awr->windowSize) << std::endl;
         }
         _continue = moveFrameForward(awr, fv);
+        _pg.increment();
+        _pg.display(true);
     }
-
+    _pg.complete();
     dumpFile.close();
     deleteFrameView(fv);
     deleteAudioWrapper(awr);

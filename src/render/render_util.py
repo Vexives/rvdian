@@ -11,7 +11,7 @@ class _FrameCounter():
     def _prog_bar(self) -> None:
         self.cur += 1
         __pct = self.cur / self.m_f
-        __bar: str = "█" * int(__pct) + " " * (10 - int(__pct)) 
+        __bar: str = "=" * int(__pct * 10) + " " * (10 - int(__pct)) 
         print(f"| Rendering: [{__bar}] - {round(__pct * 100, 3)}% - {self.cur} / {self.m_f} |", end="\r")
 
 
