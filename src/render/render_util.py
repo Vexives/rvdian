@@ -1,3 +1,5 @@
+from typing import TextIO
+from itertools import islice
 import matplotlib.pyplot as plt
 import matplotlib.animation as an
 import numpy as np
@@ -11,36 +13,30 @@ class _FrameCounter():
     def _prog_bar(self) -> None:
         self.cur += 1
         __pct = self.cur / self.m_f
-        __bar: str = "=" * int(__pct * 10) + " " * (10 - int(__pct)) 
+        __bar: str = "=" * int(__pct * 10) + " " * (10 - int(__pct * 10)) 
         print(f"| Rendering: [{__bar}] - {round(__pct * 100, 3)}% - {self.cur} / {self.m_f} |", end="\r")
 
 
-# TODO: Make the animate frames function read from the file instead of creating a large array.
-#       This will be to save memory and prevent a large overload.
-def _parse_frames(frames: list[str] | str, channels: int = 1) -> list[np.ndarray] | np.ndarray:
-    if type(frames) is str:
-        return np.array(frames.strip().split(",")).astype("float")
-    return [np.array([c.strip().split(",") for c in frames[i:i+channels]]).astype("float") 
-            for i in range(0, len(frames), channels)]
+def _min_max(line: str) -> tuple[float, float]:
+    _l: np.ndarray = np.fromstring(line.strip(), sep=",", dtype=np.float32)
+    return (np.min(_l), np.max(_l))
 
 
 def _parse_context(read_in: str) -> dict:
+    _ctx_list = read_in.strip().split(",")
+    context_dict = {"name":_ctx_list[0][:-4],
+                    "height":float(_ctx_list[1]),
+                    "width":float(_ctx_list[2]),
+                    "dpi":int(_ctx_list[3]),
+                    "channels":max(int(_ctx_list[4])+1, 2),
+                    "numframes":int(_ctx_list[5]),
+                    "framerate":int(_ctx_list[6]),
+                    "scale":_ctx_list[7]}
+    return context_dict
 
-    # TODO: REQUIRED COMPONENTS:
-    # min & max values (for both channels if possible)
-    # mono status (num channels)
-    # window resolution (dpi)
-    # numframes
-    # scale
-    # framerate
-    # name (file name)
-    # ~ON SECOND LINE~ range array
-    # Data Lines MUST BE  --->  L\n  R\n. Reshape to (2, ...) if stereo. 
-
-    pass
-
-
-def _animate_frames(frames: list[np.ndarray], rnge: np.ndarray, context: dict) -> None:
+# TODO: Almost done, but render is glitching out.
+# Putting two copies of the data and flipping them for some reason?
+def _animate_frames(frames: TextIO, rnge: np.ndarray, context: dict) -> None:
     # Plot and Counter Setup
     _counter = _FrameCounter(context["numframes"])
     _f, _axList = plt.subplots(_chns := context["channels"], 1, 
@@ -53,19 +49,22 @@ def _animate_frames(frames: list[np.ndarray], rnge: np.ndarray, context: dict) -
         _axList = np.array([_axList])
     for a in range(_chns):
         _axList[a].set_xscale(context["scale"])
+        _axList[a].set_ylim(context["ymin"], context["ymax"])
+        _axList[a].set_xlim(np.min(rnge), np.max(rnge))
         _axList[a].axis("off")
     
     # Animation and frame update setup
-    _lines = [_axList[a].plot(rnge, np.zeros_like(frames[0][a]))[0] for a in range(_chns)]
-    def _update_frame(frm) -> None:
+    _lines = [_axList[a].plot(rnge, np.zeros_like(rnge))[0] for a in range(_chns)]
+    def _update_frame(_) -> None:
         for c in range(_chns):
-            _lines[c].set_ydata(frm[c])
+            _npfrm: np.ndarray = np.fromstring(frames.readline().strip(), sep=",", dtype=np.float32)
+            _lines[c].set_ydata(_npfrm)
         _counter._prog_bar()
 
     # Start animation render and file saving
     _render_anim: an.FuncAnimation = \
-    an.FuncAnimation(_f, _update_frame, frames=frames, interval=1000.0/context["framerate"])
-    _render_anim.save(filename=f"{context['name']}.mp4", writer="ffmpeg")
+    an.FuncAnimation(_f, _update_frame, frames=context["numframes"]-1, interval=1000.0/context["framerate"])
+    _render_anim.save(filename=f"{context['name']}.mp4", writer="ffmpeg", fps=context["framerate"])
 
 
 # MAIN
@@ -75,19 +74,23 @@ if __name__ == "__main__":
     if not os.path.isfile(__path):
         raise NotADirectoryError("Frames not found. Cannot continue.")
     
-    # Get file, dump data into string list, and clear file space
-    _all_lines: list[str] = None
+    # Get min & max range from file
+    _min: float; _max: float
     with open(__path, "r") as file:
-        _all_lines: list[str] = file.readlines()
+        _stats: list = [_min_max(line) for line in islice(file, 2, None)]
+        _min = min(_stats, key=lambda p: p[0])[0]
+        _max = max(_stats, key=lambda p: p[1])[1]
+        file.close()
+    
+    # Get context, ranges, and frames, then pass into updating function
+    plt.tight_layout()
+    with open(__path, "r") as file:
+        _context: dict = _parse_context(file.readline().strip())
+        _context.update({"ymin":_min, "ymax":_max})
+        _range: np.ndarray = np.fromstring(file.readline().strip(), sep=",", dtype=np.int16)
+        _animate_frames(file, _range, _context)
         file.close()
 
-    # Get context, ranges, and frames, then pass into updating function
-    _context: dict = _parse_context(_all_lines[0])
-    _range: np.ndarray = _parse_frames(_all_lines[1])
-    _frames: list[np.ndarray] = _parse_frames(_all_lines[2:], _context["channels"])
-    plt.tight_layout()
-    _animate_frames(_frames, _range, _context)
-
     # Finish and close
-    print("| Render complete. |" + " "*30, end="\r")
-    os.remove(__path)
+    print("\r| Render complete. |" + " "*30)
+    #os.remove(__path)

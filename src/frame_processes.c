@@ -218,3 +218,25 @@ complex* normalize(complex* data, unsigned int len) {
     }
     return normArr;
 }
+
+complex* firstHalf(complex* data, unsigned int len) {
+    complex* halfArr = (complex*) malloc(sizeof(complex) * len);
+    for (unsigned int i=0; i<len/2; i++) {
+        halfArr[i*2] = data[i];
+        halfArr[(i*2)+1] = data[i];
+    }
+    if (len % 2) halfArr[len-1] = data[(len/2)+1];
+    return halfArr;
+}
+
+complex* secondHalf(complex* data, unsigned int len) {
+    complex* halfArr = (complex*) malloc(sizeof(complex) * len);
+    unsigned int _hp = len/2;
+    unsigned int _odd = len % 2;
+    for (unsigned int i=0; i<_hp; i++) {
+        halfArr[i*2] = data[_hp+_odd+i];
+        halfArr[(i*2)+1] = data[_hp+_odd+i];
+    }
+    if (_odd) halfArr[len-1] = data[len-1];
+    return halfArr;
+}

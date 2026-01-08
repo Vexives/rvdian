@@ -87,6 +87,8 @@ void _setupMaps() {
         {"--todecibels", toDecibels},
         {"--fromdecibels", fromDecibels},
         {"--norm", normalize},
+        {"--fhalf", firstHalf},
+        {"--shalf", secondHalf},
         // Window functions
         {"--hamming", hamming},
         {"--hann", hann},
