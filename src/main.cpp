@@ -190,12 +190,9 @@ int main(int argc, char** argv) {
     // Process flags and function caches
     std::list<std::function<complex*(complex*, unsigned int)>> frameCache;
     std::list<std::function<void(audioWrapper*)>> wrapCache;
-    bool _display = false, _logscale = false, _fourier = false;
+    bool _display = false, _logscale = false;
     for (int i=7; i < argc; i++) {
         std::string _command = userArgs[i];
-        if (!_command.compare("--fft") || !_command.compare("--dft")) _fourier = true;
-        else if (!_command.compare("--ifft") || !_command.compare("--idft")) _fourier = false;
-
         if (!_command.compare("+display")) { _display = true; continue; }
         if (!_command.compare("+logscale")) { _logscale = true; continue; }
         if (_frameFuncs.count(_command) > 0) { frameCache.push_back(_frameFuncs[_command]); continue; }
@@ -210,11 +207,9 @@ int main(int argc, char** argv) {
     for (const auto& func : wrapCache) func(awr);
 
     // Header information
-    complex* _freqs = _fourier ? fftfreq(awr->windowSize, 1.0f / awr->sampleRate) : arange(awr->windowSize);
     dumpFile << audioPath << "," << frameHeight << "," << frameWidth << "," << dpi << ",";
-    dumpFile << awr->mono << "," << awr->numWindows << "," << frameRate << "," << (_logscale ? "semilogx":"linear") << std::endl;
-    dumpFile << _printComplexArray(_freqs, awr->windowSize) << std::endl;
-    free(_freqs);
+    dumpFile << awr->mono << "," << awr->numWindows << "," << frameRate << ",";
+    dumpFile << (_logscale ? "log":"linear") << "," << awr->windowSize << std::endl;
 
     // If all prior checks are passed, open the frame view and process each frame
     frameView* fv = newFrameView(awr);

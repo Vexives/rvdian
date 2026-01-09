@@ -195,7 +195,7 @@ complex* absVals(complex* data, unsigned int len) {
 complex* toDecibels(complex* data, unsigned int len) {
     complex* decArr = (complex*) malloc(sizeof(complex) * len);
     for (unsigned int k = 0; k < len; k++) {
-        decArr[k] = multcf(logrc(10.0f, data[k]), 20.0f);
+        decArr[k] = multcf(logrc(10.0f, absc(data[k])), 20.0f);
     }
     return decArr;
 }
