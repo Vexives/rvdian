@@ -6,6 +6,7 @@
 #include <functional>
 #include <filesystem> //C++17
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 using namespace std;
 namespace fs = std::filesystem;
@@ -53,6 +54,12 @@ std::unordered_map<std::string, std::function<complex*(complex*, unsigned int)>>
 std::unordered_map<std::string, std::function<void(audioWrapper*)>> _wrapperFuncs;
 
 
+bool _sys_endian() {
+    union {short frm; char barr[2]; } _e_test = {0x1};
+    return _e_test.barr[0] > 0;
+}
+
+
 std::string _printComplexArray(complex* arr, unsigned int len, bool floats = true) {
     std::ostringstream _buffStr;
     for (unsigned int i=0; i<len; i++) {
@@ -61,7 +68,19 @@ std::string _printComplexArray(complex* arr, unsigned int len, bool floats = tru
             _buffStr << "+" << arr[i].i << "j";
         _buffStr << ",";
     }
-    _buffStr << endl;
+    _buffStr << std::endl;
+    std::string _retStr = _buffStr.str();
+    return _retStr.substr(0, _retStr.size()-2);
+}
+
+
+std::string _printCompHexArray(complex* arr, unsigned int len) {
+    std::ostringstream _buffStr;
+    _buffStr << std::hex;
+    for (unsigned int i=0; i<len; i++)
+        _buffStr << std::setfill('0') << std::setw(8) << 
+                    *(unsigned int*) &arr[i].r << " ";
+    _buffStr << std::endl;
     std::string _retStr = _buffStr.str();
     return _retStr.substr(0, _retStr.size()-2);
 }
@@ -209,7 +228,7 @@ int main(int argc, char** argv) {
     // Header information
     dumpFile << audioPath << "," << frameHeight << "," << frameWidth << "," << dpi << ",";
     dumpFile << awr->mono << "," << awr->numWindows << "," << frameRate << ",";
-    dumpFile << (_logscale ? "log":"linear") << "," << awr->windowSize << std::endl;
+    dumpFile << (_logscale ? "log":"linear") << "," << awr->windowSize << "," << (_sys_endian() ? ">f4" : "<f4") << std::endl;
 
     // If all prior checks are passed, open the frame view and process each frame
     frameView* fv = newFrameView(awr);
@@ -219,10 +238,10 @@ int main(int argc, char** argv) {
     bool _continue = true;
     while (_continue) {
         complex* _left = _aggregateFunctions(fv->frameL, awr->windowSize, frameCache);
-        dumpFile << _printComplexArray(_left, awr->windowSize) << std::endl;
+        dumpFile << _printCompHexArray(_left, awr->windowSize) << std::endl;
         if (!awr->mono) {
             complex* _right = _aggregateFunctions(fv->frameR, awr->windowSize, frameCache);
-            dumpFile << _printComplexArray(_right, awr->windowSize) << std::endl;
+            dumpFile << _printCompHexArray(_right, awr->windowSize) << std::endl;
         }
         _continue = moveFrameForward(awr, fv);
         _pg.increment();

@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as an
 import numpy as np
 import os
+import struct
+
 
 class _FrameCounter():
     def __init__(self, max_frames: int) -> None:
@@ -17,8 +19,9 @@ class _FrameCounter():
         print(f"| Rendering: [{__bar}] - {round(__pct * 100, 3)}% - {self.cur} / {self.m_f} |", end="\r")
 
 
-def _min_max(line: str) -> tuple[float, float]:
-    _l: np.ndarray = np.fromstring(line.strip(), sep=",", dtype=np.float32)
+def _min_max(line: str, endian: str) -> tuple[float, float]:
+    _prep = bytes.fromhex(line.strip())
+    _l: np.ndarray = np.frombuffer(_prep, dtype=endian)
     return (np.min(_l), np.max(_l))
 
 
@@ -32,11 +35,12 @@ def _parse_context(read_in: str) -> dict:
                     "numframes":int(_ctx_list[5]),
                     "framerate":int(_ctx_list[6]),
                     "scale":_ctx_list[7],
-                    "framesize":int(_ctx_list[8])}
+                    "framesize":int(_ctx_list[8]),
+                    "endian":_ctx_list[9]}
     return context_dict
 
 
-def _animate_frames(frames: TextIO, rnge: np.ndarray, context: dict) -> None:
+def _animate_frames(frames: islice, rnge: np.ndarray, context: dict) -> None:
     # Plot and Counter Setup
     _counter = _FrameCounter(context["numframes"])
     _f, _axList = plt.subplots(_chns := context["channels"], 1, 
@@ -63,7 +67,8 @@ def _animate_frames(frames: TextIO, rnge: np.ndarray, context: dict) -> None:
 
     def _update_frame(_) -> list:
         for c in range(_chns):
-            _npfrm: np.ndarray = np.fromstring(frames.readline().strip(), sep=",", dtype=np.float32)
+            _line = bytes.fromhex(next(frames).strip())
+            _npfrm: np.ndarray = np.frombuffer(_line, dtype=context["endian"])
             _lines[c].set_ydata(_npfrm)
         _counter._prog_bar()
         return _lines
@@ -82,23 +87,21 @@ if __name__ == "__main__":
     if not os.path.isfile(__path):
         raise NotADirectoryError("Frames not found. Cannot continue.")
     
-    # TODO: Maybe convert the float digits to Hexadecimal and convert them back here.
-    
     # Get min & max range from file
-    _min: float; _max: float
+    _context: dict
     with open(__path, "r") as file:
-        _stats: list = [_min_max(line) for line in islice(file, 2, None)]
-        _min = min(_stats, key=lambda p: p[0])[0]
-        _max = max(_stats, key=lambda p: p[1])[1]
+        _context: dict = _parse_context(file.readline().strip())
+        _stats: list = [_min_max(line, _context["endian"]) for line in file]
+        _min: float = min(_stats, key=lambda p: p[0])[0]
+        _max: float = max(_stats, key=lambda p: p[1])[1]
+        _context.update({"ymin":_min, "ymax":_max})
         file.close()
     
     # Get context, ranges, and frames, then pass into updating function
     plt.tight_layout()
     with open(__path, "r") as file:
-        _context: dict = _parse_context(file.readline().strip())
-        _context.update({"ymin":_min, "ymax":_max})
         _range: np.ndarray = np.arange(_context["framesize"])+1
-        _animate_frames(file, _range, _context)
+        _animate_frames(islice(file, 1, None), _range, _context)
         file.close()
 
     # Finish and close
